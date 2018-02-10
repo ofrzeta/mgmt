@@ -65,6 +65,9 @@ func init() {
 
 	resFields []*StmtResField
 	resField  *StmtResField
+
+	edgeHalfList []*StmtEdgeHalf
+	edgeHalf     *StmtEdgeHalf
 }
 
 %token OPEN_CURLY CLOSE_CURLY
@@ -74,7 +77,7 @@ func init() {
 %token STRING BOOL INTEGER FLOAT
 %token EQUALS
 %token COMMA COLON SEMICOLON
-%token ROCKET
+%token ROCKET ARROW DOT
 %token STR_IDENTIFIER BOOL_IDENTIFIER INT_IDENTIFIER FLOAT_IDENTIFIER
 %token STRUCT_IDENTIFIER VARIANT_IDENTIFIER VAR_IDENTIFIER IDENTIFIER
 %token VAR_IDENTIFIER_HX
@@ -154,6 +157,11 @@ stmt:
 		$$.stmt = $1.stmt
 	}
 |	resource
+	{
+		posLast(yylex, yyDollar) // our pos
+		$$.stmt = $1.stmt
+	}
+|	edge
 	{
 		posLast(yylex, yyDollar) // our pos
 		$$.stmt = $1.stmt
@@ -685,6 +693,91 @@ resource_field:
 		}
 	}
 ;
+edge:
+	// TODO: we could technically prevent single edge_half pieces from being
+	// parsed, but it's probably more work than is necessary...
+	// test["n1"] -> test["n2"] -> test["n3"] # chain or pair
+	edge_half_list
+	{
+		posLast(yylex, yyDollar) // our pos
+		$$.stmt = &StmtEdge{
+			EdgeHalfList: $1.edgeHalfList,
+			//Notify: false, // unused here
+		}
+	}
+//	// test["n1"].foo_send -> test["n2"].blah_recv # send/recv
+//|	edge_half_sendrecv ARROW edge_half_sendrecv
+//	{
+//		posLast(yylex, yyDollar) // our pos
+//		$$.stmt = &StmtEdge{
+//			EdgeHalfList: []*StmtEdgeHalf{
+//				$1.edgeHalf,
+//				$3.edgeHalf,
+//			},
+//			//Notify: false, // unused here, it is implied (i think)
+//		}
+//	}
+//	// test["n1"].foo_send -> test["n2"].blah_recv # send/recv
+//|	IDENTIFIER OPEN_BRACK expr CLOSE_BRACK DOT IDENTIFIER ARROW IDENTIFIER OPEN_BRACK expr CLOSE_BRACK DOT IDENTIFIER
+//	{
+//		posLast(yylex, yyDollar) // our pos
+//		e1 := &StmtEdgeHalf{
+//			Kind: $1.str,
+//			Name: $3.expr,
+//			SendRecv: $6.str,
+//		}
+//		e2 := &StmtEdgeHalf{
+//			Kind: $8.str,
+//			Name: $10.expr,
+//			SendRecv: $13.str,
+//		}
+//
+//		$$.stmt = &StmtEdge{
+//			EdgeHalfList: []*StmtEdgeHalf{
+//				e1,
+//				e2,
+//			},
+//			//Notify: false, // unused here, it is implied (i think)
+//		}
+//	}
+//;
+;
+edge_half_list:
+	/* end of list */
+	{
+		posLast(yylex, yyDollar) // our pos
+		$$.edgeHalfList = []*StmtEdgeHalf{}
+	}
+|	edge_half_list ARROW edge_half
+	{
+		posLast(yylex, yyDollar) // our pos
+		$$.edgeHalfList = append($1.edgeHalfList, $3.edgeHalf)
+	}
+;
+edge_half:
+	// eg: test["n1"]
+	IDENTIFIER OPEN_BRACK expr CLOSE_BRACK
+	{
+		posLast(yylex, yyDollar) // our pos
+		$$.edgeHalf = &StmtEdgeHalf{
+			Kind: $1.str,
+			Name: $3.expr,
+			//SendRecv: "", // unused
+		}
+	}
+;
+//edge_half_sendrecv:
+//	// eg: test["n1"].foo_send
+//	IDENTIFIER OPEN_BRACK expr CLOSE_BRACK DOT IDENTIFIER
+//	{
+//		posLast(yylex, yyDollar) // our pos
+//		$$.edgeHalf = &StmtEdgeHalf{
+//			Kind: $1.str,
+//			Name: $3.expr,
+//			SendRecv: $6.str,
+//		}
+//	}
+//;
 type:
 	BOOL_IDENTIFIER
 	{

@@ -752,6 +752,72 @@ func TestLexParse0(t *testing.T) {
 			exp:  exp,
 		})
 	}
+	//	{
+	//		exp := &StmtProg{
+	//			Prog: []interfaces.Stmt{
+	//				&StmtRes{
+	//					Kind: "test",
+	//					Name: &ExprStr{
+	//						V: "n1",
+	//					},
+	//					Fields: []*StmtResField{
+	//						{
+	//							Field: "int64ptr",
+	//							Value: &ExprInt{
+	//								V: 42,
+	//							},
+	//						},
+	//					},
+	//				},
+	//				&StmtRes{
+	//					Kind: "test",
+	//					Name: &ExprStr{
+	//						V: "n2",
+	//					},
+	//					Fields: []*StmtResField{
+	//						{
+	//							Field: "int64ptr",
+	//							Value: &ExprInt{
+	//								V: 13,
+	//							},
+	//						},
+	//					},
+	//				},
+	//			},
+	//		}
+	//XXX		values = append(values, test{
+	//			name: "edge stmt",
+	//			code: `
+	//			test "n1" {
+	//				int64ptr => 42,
+	//				@meta delay 42
+	//			}
+	//			test "n2" {
+	//				@retry => 42,
+	//				int64ptr => 13,
+	//				before @test["n1"]
+	//			}
+	//			test "n3" {
+	//				int64ptr => @test["n1"].int64ptr,	# syntax?
+	//				@recv test["n1"].int64ptr
+	//			}
+
+	//			# which syntax would be best?
+	//			#	test["n1"] -> test["n2"]
+	//			#	test "n1" -> test "n2"
+	//			#	test{"n1"} -> test{"n2"}
+	//			#	@test["n1"] -> @test["n2"]
+	//			# ???
+
+	//			test["n1"] -> test["n2"] -> test["n3"]
+
+	//			@test["n1"].foo_send -> @test["n2"].blah_recv	# send/recv
+
+	//			`,
+	//			fail: false,
+	//			exp:  exp,
+	//		})
+	//	}
 
 	for index, test := range values { // run all the tests
 		name, code, fail, exp := test.name, test.code, test.fail, test.exp
